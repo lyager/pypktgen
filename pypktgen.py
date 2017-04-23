@@ -66,9 +66,12 @@ def getByteLength(str1):
 
 def writeByteStringToFile(bytestring, bitout):
     bytelist = bytestring.split()
-    bytes = binascii.a2b_hex(''.join(bytelist))
-    bitout.write(bytes)
+    outbytes = binascii.a2b_hex(''.join(bytelist))
+    bitout.write(outbytes)
 
+def generateGlobalHeader(bitout):
+    bytestring = pcap_global_header
+    writeByteStringToFile(bytestring, bitout)
 
 def generatePCAP(message, port, bitout):
     udp = udp_header.replace('XX XX', "%04x" % port)
@@ -86,7 +89,7 @@ def generatePCAP(message, port, bitout):
     pcaph = pcap_packet_header.replace('XX XX XX XX', reverse_hex_str)
     pcaph = pcaph.replace('YY YY YY YY', reverse_hex_str)
 
-    bytestring = pcap_global_header + pcaph + eth_header + ip + udp + message
+    bytestring = pcaph + eth_header + ip + udp + message
     writeByteStringToFile(bytestring, bitout)
 
 
@@ -124,6 +127,7 @@ num_packets = int(sys.argv[2])
 
 print "Generating {} packets in file {}".format(num_packets, filename)
 with open(filename, 'wb') as bitout:
+    generateGlobalHeader(bitout)
     while num_packets:
         generatePCAP(message, port, bitout)
         num_packets -= 1
