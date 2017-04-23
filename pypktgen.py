@@ -64,14 +64,13 @@ def getByteLength(str1):
     return len(''.join(str1.split())) / 2
 
 
-def writeByteStringToFile(bytestring, filename):
+def writeByteStringToFile(bytestring, bitout):
     bytelist = bytestring.split()
     bytes = binascii.a2b_hex(''.join(bytelist))
-    bitout = open(filename, 'wb')
     bitout.write(bytes)
 
 
-def generatePCAP(message, port, pcapfile):
+def generatePCAP(message, port, bitout):
     udp = udp_header.replace('XX XX', "%04x" % port)
     udp_len = getByteLength(message) + getByteLength(udp_header)
     udp = udp.replace('YY YY', "%04x" % udp_len)
@@ -88,7 +87,7 @@ def generatePCAP(message, port, pcapfile):
     pcaph = pcaph.replace('YY YY YY YY', reverse_hex_str)
 
     bytestring = pcap_global_header + pcaph + eth_header + ip + udp + message
-    writeByteStringToFile(bytestring, pcapfile)
+    writeByteStringToFile(bytestring, bitout)
 
 
 # Splits the string into a list of tokens every n characters
@@ -116,8 +115,15 @@ def ip_checksum(iph):
 """ End of functions, execution starts here: """
 """------------------------------------------"""
 
-if len(sys.argv) > 2:
-        print 'usage: pcapgen.py output_file'
+if len(sys.argv) != 3:
+        print 'usage: pcapgen.py output_file num_packets'
         exit(0)
 
-generatePCAP(message, port, sys.argv[1])
+filename = sys.argv[1]
+num_packets = int(sys.argv[2])
+
+print "Generating {} packets in file {}".format(num_packets, filename)
+with open(filename, 'wb') as bitout:
+    while num_packets:
+        generatePCAP(message, port, bitout)
+        num_packets -= 1
